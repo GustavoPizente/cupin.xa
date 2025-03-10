@@ -1,0 +1,11 @@
+[33mcommit 27ea89abc70cb7be9585c1e9a0cfec6a5c3a1fbd[m
+Author: GustavoPizente <gustavonazarine@gmail.com>
+Date:   Mon Mar 10 09:17:32 2025 -0300
+
+    Removendo o .env do controle de versão
+
+[33mcommit f9f0a18fd171cfe7b818ddf06d49f0dcae026aff[m
+Author: GustavoPizente <gustavonazarine@gmail.com>
+Date:   Mon Mar 10 09:05:20 2025 -0300
+
+    primeiro commit
