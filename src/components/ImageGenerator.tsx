@@ -1,24 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 
-const HF_API_TOKEN = process.env.REACT_APP_HF_API_TOKEN;
-const API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev";
+
+const PG_API_TOKEN  = process.env.PG_API_TOKEN
+
+
+const translateText = async (text: string) => {
+  try {
+    const response = await axios.get(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=pt&tl=en&dt=t&q=${encodeURIComponent(
+        text
+      )}`
+    );
+
+    return response.data[0][0][0] || text;
+  } catch (error) {
+    console.error("Erro na tradução:", error);
+    return text; // Se falhar, mantém o texto original
+  }
+};
 
 const ImageGenerator = () => {
   const [image, setImage] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-
-    console.log("Token carregado:", HF_API_TOKEN);
-
-    
-    
-    // Gera uma imagem automaticamente ao montar o componente
-    fetchImage();
-  }, []);
 
   const fetchImage = async () => {
     if (!prompt) return;
@@ -27,22 +33,16 @@ const ImageGenerator = () => {
     setError(null);
 
     try {
-      const response = await axios.post(
-        API_URL,
-        { inputs: prompt },
-        {
-          headers: {
-            Authorization: `Bearer ${HF_API_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          responseType: "arraybuffer",
-        }
-      );
+      const translatedText = await translateText(prompt);
+      const finalPrompt = `${translatedText} made of fine wood`;
 
-      // Criar uma URL para exibir a imagem gerada
-      const blob = new Blob([response.data], { type: "image/png" });
-      const imageUrl = URL.createObjectURL(blob);
-      setImage(imageUrl);
+      console.log("Prompt final:", finalPrompt);
+
+      const ImagePig = require("imagepig");
+      const imagepig = ImagePig(PG_API_TOKEN);
+      const result = await imagepig.default(finalPrompt);
+
+      setImage(result.url); // Usa a URL retornada pela API
     } catch (err: any) {
       setError("Erro ao gerar a imagem. Tente novamente.");
       console.error(err);
@@ -51,9 +51,20 @@ const ImageGenerator = () => {
     }
   };
 
+  const downloadImage = () => {
+    if (!image) return;
+
+    const a = document.createElement("a");
+    a.href = image;
+    a.download = "imagem_gerada.png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
-    <div  className="main">
-      <h2>Precisando de inspirações? </h2>
+    <div className="main">
+      <h2>Precisando de inspirações?</h2>
       <input
         type="text"
         value={prompt}
@@ -66,7 +77,13 @@ const ImageGenerator = () => {
 
       {loading && <p>Gerando... demora mas vai!</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
-      {image && <img src={image}  className="generatedImage" alt="Imagem Gerada" />}
+      {image && (
+        <img src={image} className="generatedImage" alt="Imagem Gerada" />
+      )}
+
+      <button onClick={downloadImage} disabled={!image}>
+        Baixar Imagem
+      </button>
     </div>
   );
 };
